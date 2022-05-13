@@ -1,0 +1,91 @@
+---
+- name: "Setup MAAS Region and Controller"
+  hosts: localhost
+  connection: local
+  become: yes
+
+  tasks:
+    # =========================
+    # Update the server 
+    # ==========================
+    #
+    - name: Upgrade server
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # Once day between updates
+    # =========================
+    # Intall the MAAS packages
+    # =========================
+    #
+    - name: Set iptables interface variable
+      set_fact:
+        default_interface: "{{ ansible_default_ipv4.interface  }}"
+    - name: Set iptables address variable
+      set_fact:
+        default_ip: "{{ ansible_default_ipv4.address }}"
+    - name: Install MAAS snap package
+      shell: snap install --channel=latest/stable lxd
+    - name: Install refresh MAAS snap package
+      shell: snap refresh --channel=latest/stable lxd
+    - name: Install MAAS package for both Region and Rack
+      shell: snap install maas
+    - name: Install the test db for MAAS
+      shell: snap install maas-test-db
+    - name: Initializing MAAS setup
+      debug:
+        msg: maas init region+rack --database-uri maas-test-db:/// --maas-url http://{{default_ip}}:5240/MAAS
+    - name: Init MAAS
+      shell: maas init region+rack --database-uri maas-test-db:/// --maas-url http://{{default_ip}}:5240/MAAS
+    # =========================
+    # Setup networking
+    # =========================
+    - name: Enable ipv4 forward in the /etc/sysctl.conf
+      replace:
+        path: /etc/sysctl.conf
+        regexp: '#net.ipv4.ip_forward=1'
+        replace: 'net.ipv4.ip_forward=1'
+    - name: Setup ip tables
+      shell: 'iptables -t nat -A POSTROUTING -o {{default_interface}} -j SNAT --to {{default_ip}}'
+      register: IPV4_NAT
+    - name: Install iptables IPv4
+      shell: echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections
+      register: IP_TABLES_IPV4
+    - name: Install iptables IPv6
+      shell: echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections
+      register: IP_TABLES_IPV6
+    - name: Install iptables-persistent package
+      apt: pkg=iptables-persistent state=present update_cache=true
+    # =========================
+    # Setup the server to be more informative
+    # Improve UX with useful tools
+    # =========================
+    - name: Install OpenSSH
+      apt: pkg=openssh-server state=present update_cache=true
+    - name: Install jq
+      apt: pkg=jq state=present update_cache=true
+    - name: Get OS Release
+      shell: lsb_release -cs
+      register: RELEASE
+    - name: Install htop
+      apt: pkg=htop state=present update_cache=true
+    - name: Install tmux
+      apt: pkg=tmux state=present update_cache=true
+    - name: Install curl
+      apt: pkg=curl state=present update_cache=true
+    - name: Install git
+      apt: pkg=git state=present update_cache=true      
+    - name: Install neofetch
+      apt: pkg=neofetch state=present update_cache=true
+    - name: Install Figlet
+      apt: pkg=figlet state=present update_cache=true
+    - name: Install Toilet
+      apt: pkg=toilet state=present update_cache=true
+    - name: Add the hostname to the message of the day
+      shell: 'toilet -f slant $(hostname) -F metal > /etc/motd'
+      register: MOTD
+
+
+  handlers:
+
+
