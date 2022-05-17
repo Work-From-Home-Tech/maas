@@ -4,6 +4,11 @@ Establishing your home office infrastructute is one of the most important steps 
 
 ## Reference Links:
 
+### Work From Home Tech YouTube Channel
+
+INTRO: https://www.youtube.com/channel/UC3f852TuLZbinjq4QA92V9Q
+Ubuntu Install: https://youtu.be/ASgwQMN34JM
+
 ### Bare metal Kubernetes hands on tutorial with MAAS and Juju
 
 https://www.youtube.com/watch?v=sLADei_c9Qg
