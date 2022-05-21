@@ -7,8 +7,6 @@ Establishing your home office infrastructute is one of the most important steps 
 [![MaaS Tutorial](https://img.youtube.com/vi/m3d1rz0Nepk/maxresdefault.jpg)](https://www.youtube.com/embed/m3d1rz0Nepk)
 link: - https://www.youtube.com/watch?v=m3d1rz0Nepk
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/m3d1rz0Nepk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ### Node deployment
 
 TODOS:
@@ -52,10 +50,12 @@ https://juju.is/tutorials/deploy-nextcloud-and-collabora-on-ubuntu#1-introductio
 
 https://servermonkey.com
 
-### Work From Home Tech YouTube Channel
+### Work From Home Tech YouTube Channel Introduction
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/7zls5w3Ar1U" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![WFHT Channel Intro](https://img.youtube.com/vi/7zls5w3Ar1U/maxresdefault.jpg)](https://www.youtube.com/embed/7zls5w3Ar1U) 
+
+Link - https://youtu.be/7zls5w3Ar1U
 
 ### Work From Home Tech Website
 
-TBD
+Coming Soon!
