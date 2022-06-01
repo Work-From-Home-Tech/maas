@@ -1,0 +1,78 @@
+---
+- name: "Setup MAAS Node"
+  hosts: {ADD YOUR NODES HERE}
+  become: yes
+
+  tasks:
+    # =========================
+    # Update the server 
+    # ==========================
+    #
+    - name: Upgrade server
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # Once day between updates
+    # =========================
+
+    # =========================
+    # Setup networking
+    # =========================
+    
+
+
+    # =========================
+    # Setup the server to be more informative
+    # Improve UX with useful tools
+    # =========================
+    - name: Install jq
+      apt: pkg=jq state=present update_cache=true
+    - name: Get OS Release
+      shell: lsb_release -cs
+      register: RELEASE
+    - name: Install htop
+      apt: pkg=htop state=present update_cache=true
+    - name: Install tmux
+      apt: pkg=tmux state=present update_cache=true
+    - name: Install curl
+      apt: pkg=curl state=present update_cache=true
+    - name: Install git
+      apt: pkg=git state=present update_cache=true      
+    - name: Install neofetch
+      apt: pkg=neofetch state=present update_cache=true
+    - name: Install Figlet
+      apt: pkg=figlet state=present update_cache=true
+    - name: Install Toilet
+      apt: pkg=toilet state=present update_cache=true
+    - name: Add the hostname to the message of the day
+      shell: 'toilet -f slant $(hostname) -F metal > /etc/motd'
+      register: MOTD
+    - name: Install Wireguard
+      apt: pkg=wireguard state=present update_cache=true
+    # =========================
+    # Setup Docker repository and Docker
+    # =========================
+    - name: Install CA Certificates
+      apt: pkg=ca-certificates state=present update_cache=true
+    - name: Install GPG
+      apt: pkg=gnupg state=present update_cache=true
+    - name: Download Docker GPG Key
+      shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg
+    - name: Install Docker GPG Key 
+      shell: gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    - name: Add the stable repository
+      shell: echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    - name: Docker CE
+      apt: pkg=docker-ce state=present update_cache=true
+    - name: Docker CLI
+      apt: pkg=docker-ce-cli state=present update_cache=true
+    - name: Container io
+      apt: pkg=containerd.io state=present update_cache=true
+    - name: Docker Compose
+      apt: pkg=docker-compose-plugin state=present update_cache=true
+
+
+  handlers:
+
+
