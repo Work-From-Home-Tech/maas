@@ -1,6 +1,6 @@
 ---
 - name: "Setup MAAS Node"
-  hosts: {ADD YOUR NODES HERE}
+  hosts: all
   become: yes
 
   tasks:
