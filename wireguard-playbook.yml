@@ -1,0 +1,70 @@
+---
+- name: "Setup Wireguard on a host or client machine"
+  hosts: localhost
+  connection: local
+  become: yes
+
+  # ************** NOTE ******************
+  # Several parameters are accepted when using this playbook
+  # The desired wireguard address may must be provided
+  # ex: ansible-playbook -e wg_address=10.0.0.1
+  # The desired wireguard allowed IP addresses may be provide
+  # ex: ansible-playbook -e wg_allowed
+  vars:
+    wg_repo_url: 'https://github.com/awslabs/git-secrets.git'
+    ip_address: "{{ ansible_default_ipv4.address }}"
+    tmp_path: /tmp/wgtmp
+    wg_path: /etc/wireguard
+    wg_address: 192.168.99.1
+    wg_allowed: 192.168.99.0/24
+
+
+  tasks:
+    # =========================
+    # Update the server 
+    # ==========================
+    #
+    - name: Upgrade server
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # Once day between updates
+    # =========================
+    # Install Wireguard and setup networking
+    # ==========================
+    - name: Install Wireguard
+      apt: pkg=wireguard state=present update_cache=yes
+    - name: Checkout Wireguard config template
+      git:
+        repo: "{{ wg_repo_url }}"
+        dest: "{{ tmp_path }}"
+        accept_hostkey: yes
+    - name: Create Wireguard private and public key
+      shell: "wg genkey > {{tmp_path}}/privatekey"
+    - name: Create Wireguard public key
+      shell: "wg pubkey < {{tmp_path}}/privatekey > {{tmp_path}}/publickey "
+    - name: Create Wireguard file
+      copy:
+        dest: "{{wg_path}}/wg0.conf"
+        content: |
+          [Interface]
+          Address = {{ wg_address }}
+          PrivateKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/privatekey') }}
+          ListenPort = 51820
+
+          [Peer]
+          PublicKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/publickey') }}
+          AllowedIPs = {{ wg_allowed }}
+
+          #PersistentKeepalive = 25
+    - debug:
+        msg: "ip_address: {{wg_address}} wg_path: {{wg_path}}"
+    # Cleanup and enable service
+    - name: Copy Wireguard file after configurations are complete
+      shell: cp {{tmp_path}}/README.rst /etc/wireguard
+    - name: Remove temp files
+      shell: rm -rf {{tmp_path}}
+    - name: Secure the config file
+      shell: chmod -R og-rwx /etc/wireguard/*
+    - name: Enable Wireguard service
+      shell: systemctl enable wg-quick@wg0.service
