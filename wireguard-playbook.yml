@@ -33,6 +33,10 @@
     # ==========================
     - name: Install Wireguard
       apt: pkg=wireguard state=present update_cache=yes
+    - name: Create temp working folder
+      file:
+      path: '{{wg_path}}'
+      state: directory
     - name: Create Wireguard private and public key
       shell: "wg genkey > {{tmp_path}}/privatekey"
     - name: Create Wireguard public key
@@ -55,7 +59,7 @@
     - debug:
         msg: "Config ip_address: {{wg_address}} File path: {{wg_path}}"
     - name: Secure the config file
-      ansible.builtin.file:
+      file:
         path: '{{wg_path}}'
         owner: root
         group: root
