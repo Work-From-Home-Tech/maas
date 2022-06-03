@@ -52,6 +52,7 @@
 
           [Peer]
           PublicKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/publickey') }}
+          # Endpoint = {Server-IP address}:51820
           AllowedIPs = {{ wg_allowed }}
 
           # Uncomment line below on clients using NAT
