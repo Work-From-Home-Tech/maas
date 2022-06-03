@@ -1,7 +1,6 @@
 ---
 - name: "Setup Wireguard on a host or client machine"
   hosts: localhost
-  connection: local
   become: yes
 
   # ************** NOTE ******************
@@ -15,8 +14,8 @@
     ip_address: "{{ ansible_default_ipv4.address }}"
     tmp_path: /tmp/wgtmp
     wg_path: /etc/wireguard
-    wg_address: 192.168.99.1
-    wg_allowed: 192.168.99.0/24
+    wg_address: "{{ansible_default_ipv4.address}}"
+    wg_allowed: "{{ansible_default_ipv4.address}}/32"
 
 
   tasks:
@@ -34,11 +33,6 @@
     # ==========================
     - name: Install Wireguard
       apt: pkg=wireguard state=present update_cache=yes
-    - name: Checkout Wireguard config template
-      git:
-        repo: "{{ wg_repo_url }}"
-        dest: "{{ tmp_path }}"
-        accept_hostkey: yes
     - name: Create Wireguard private and public key
       shell: "wg genkey > {{tmp_path}}/privatekey"
     - name: Create Wireguard public key
@@ -56,15 +50,16 @@
           PublicKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/publickey') }}
           AllowedIPs = {{ wg_allowed }}
 
+          # Uncomment line below on clients using NAT
           #PersistentKeepalive = 25
     - debug:
-        msg: "ip_address: {{wg_address}} wg_path: {{wg_path}}"
-    # Cleanup and enable service
-    - name: Copy Wireguard file after configurations are complete
-      shell: cp {{tmp_path}}/README.rst /etc/wireguard
-    - name: Remove temp files
-      shell: rm -rf {{tmp_path}}
+        msg: "Config ip_address: {{wg_address}} File path: {{wg_path}}"
     - name: Secure the config file
-      shell: chmod -R og-rwx /etc/wireguard/*
+      ansible.builtin.file:
+        path: '{{wg_path}}'
+        owner: root
+        group: root
+        mode: '0600'
+        recurse: yes
     - name: Enable Wireguard service
       shell: systemctl enable wg-quick@wg0.service
