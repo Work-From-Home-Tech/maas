@@ -1,0 +1,65 @@
+---
+- name: "Setup Wireguard on a host or client machine"
+  hosts: localhost
+  become: yes
+
+  # ************** NOTE ******************
+  # Several parameters are accepted when using this playbook
+  # The desired wireguard address may must be provided
+  # ex: ansible-playbook -e wg_address=10.0.0.1
+  # The desired wireguard allowed IP addresses may be provide
+  # ex: ansible-playbook -e wg_allowed
+  vars:
+    wg_repo_url: 'https://github.com/awslabs/git-secrets.git'
+    ip_address: "{{ ansible_default_ipv4.address }}"
+    tmp_path: /tmp/wgtmp
+    wg_path: /etc/wireguard
+    wg_address: "{{ansible_default_ipv4.address}}"
+    wg_allowed: "{{ansible_default_ipv4.address}}/32"
+
+
+  tasks:
+    # =========================
+    # Update the server 
+    # ==========================
+    #
+    - name: Upgrade server
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # Once day between updates
+    # =========================
+    # Install Wireguard and setup networking
+    # ==========================
+    - name: Install Wireguard
+      apt: pkg=wireguard state=present update_cache=yes
+    - name: Create Wireguard private and public key
+      shell: "wg genkey > {{tmp_path}}/privatekey"
+    - name: Create Wireguard public key
+      shell: "wg pubkey < {{tmp_path}}/privatekey > {{tmp_path}}/publickey "
+    - name: Create Wireguard file
+      copy:
+        dest: "{{wg_path}}/wg0.conf"
+        content: |
+          [Interface]
+          Address = {{ wg_address }}
+          PrivateKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/privatekey') }}
+          ListenPort = 51820
+
+          [Peer]
+          PublicKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/publickey') }}
+          AllowedIPs = {{ wg_allowed }}
+
+          # Uncomment line below on clients using NAT
+          #PersistentKeepalive = 25
+    - debug:
+        msg: "Config ip_address: {{wg_address}} File path: {{wg_path}}"
+    - name: Secure the config file
+      ansible.builtin.file:
+        path: '{{wg_path}}'
+        owner: root
+        group: root
+        mode: '0600'
+        recurse: yes
+    - name: Enable Wireguard service
+      shell: systemctl enable wg-quick@wg0.service
