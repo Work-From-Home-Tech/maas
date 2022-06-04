@@ -33,14 +33,10 @@
     # ==========================
     - name: Install Wireguard
       apt: pkg=wireguard state=present update_cache=yes
-    - name: Create temp working folder
-      file:
-        path: '{{tmp_path}}'
-        state: directory
     - name: Create Wireguard private key
-      shell: "wg genkey > {{tmp_path}}/privatekey"
+      shell: "wg genkey > {{wg_path}}/privatekey"
     - name: Create Wireguard public key
-      shell: "wg pubkey < {{tmp_path}}/privatekey > {{tmp_path}}/publickey "
+      shell: "wg pubkey < {{wg_path}}/privatekey > {{wg_path}}/publickey "
     - name: Create Wireguard file
       copy:
         dest: "{{wg_path}}/wg0.conf"
@@ -51,8 +47,8 @@
           ListenPort = 51820
 
           [Peer]
-          PublicKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/publickey') }}
-          # Endpoint = {Server-IP address}:51820
+          PublicKey = 
+          Endpoint = {Server Internet IP address}:51820
           AllowedIPs = {{ wg_allowed }}
 
           # Uncomment line below on clients using NAT
