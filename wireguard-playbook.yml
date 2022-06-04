@@ -35,9 +35,9 @@
       apt: pkg=wireguard state=present update_cache=yes
     - name: Create temp working folder
       file:
-        path: '{{wg_path}}'
+        path: '{{tmp_path}}'
         state: directory
-    - name: Create Wireguard private and public key
+    - name: Create Wireguard private key
       shell: "wg genkey > {{tmp_path}}/privatekey"
     - name: Create Wireguard public key
       shell: "wg pubkey < {{tmp_path}}/privatekey > {{tmp_path}}/publickey "
