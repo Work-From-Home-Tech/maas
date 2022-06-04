@@ -43,7 +43,7 @@
         content: |
           [Interface]
           Address = {{ wg_address }}
-          PrivateKey = # {{ wg_address }} = {{ lookup('file', '{{tmp_path}}/privatekey') }}
+          PrivateKey = {{ lookup('file', '{{tmp_path}}/privatekey') }}
           ListenPort = 51820
 
           [Peer]
