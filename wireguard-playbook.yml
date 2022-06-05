@@ -45,6 +45,7 @@
           Address = {{ wg_address }}
           PrivateKey = {{ lookup('file', '{{tmp_path}}/privatekey') }}
           ListenPort = 51820
+          SaveConfig = true
 
           [Peer]
           PublicKey = 
