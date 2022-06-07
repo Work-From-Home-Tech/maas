@@ -1,6 +1,6 @@
 ---
 - name: "Setup MAAS Node"
-  hosts: all
+  hosts: localhost
   become: yes
 
   tasks:
