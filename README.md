@@ -34,6 +34,18 @@ TODOS:
 
 ## Reference Links:
 
+### *** Note for CentOS Images ***
+
+If you are using the MAAS CentOS 8 image you will have to update the yum repositories using the following commands
+
+```bash
+sudo sed -i -e "s|mirrorlist=|#mirrorlist=|g" /etc/yum.repos.d/CentOS-*
+```
+
+```bash
+sudo sed -i -e "s|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g" /etc/yum.repos.d/CentOS-*
+```
+
 ### Work From Home Tech YouTube Channel
 
 Ubuntu Install for MAAS Setup: https://www.youtube.com/watch?v=ASgwQMN34JM
