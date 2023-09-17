@@ -10,11 +10,10 @@ botocore = "~=1.27"
 docker = "~=6.0"
 jinja2 = "~=3.1"
 jmespath = "~=1.0"
-xlsxwritter = "~=3.0"
 pyopenssl = "~=23.0"
 ipaddr = "*"
 netaddr = "*"
 requests = "*"
 
-[requirements]
-python_version = "3"
+[requires]
+python_version = "~=3.10"

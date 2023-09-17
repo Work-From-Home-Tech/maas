@@ -1,91 +1,130 @@
 ---
-- name: "Setup MAAS Region and Controller"
+- name: 'Setup MAAS Region and Controller'
   hosts: localhost
   connection: local
-  become: yes
+  become: true
 
   tasks:
+    # =========================
+    # Pre-install checks
+    # ==========================
+    #
+    - name: 'Read ID of OS distribution.'
+      ansible.builtin.command: 'lsb_release -si'
+      register: OsDistribution
+
+    - name: 'Read codename of OS distribution'
+      ansible.builtin.command: 'lsb_release -cs'
+      register: OsCodename
+
+    - name: 'Fail if OS distribution is not Ubuntu'
+      ansible.builtin.fail:
+        msg: 'Currently only Ubuntu 20.04 and Ubuntu 22.04 are supported by ansible scripting.'
+      when: OsDistribution.stdout != 'Ubuntu'
     # =========================
     # Update the server 
     # ==========================
     #
-    - name: Upgrade server
-      apt:
-        upgrade: yes
-        update_cache: yes
+    - name: Update apt cache and upgrade server.
+      ansible.builtin.apt:
+        upgrade: true
+        update_cache: true
         cache_valid_time: 86400 # Once day between updates
+      register: AptReturnCode
+      until: AptReturnCode is success
+      retries: 10
+      delay: 10
     # =========================
     # Intall the MAAS packages
     # =========================
     #
-    - name: Set iptables interface variable
-      set_fact:
+    - name: Set iptables variables
+      ansible.builtin.set_fact:
         default_interface: "{{ ansible_default_ipv4.interface  }}"
-    - name: Set iptables address variable
-      set_fact:
         default_ip: "{{ ansible_default_ipv4.address }}"
+
     - name: Install MAAS snap package
-      shell: snap install --channel=latest/stable lxd
+      ansible.builtin.command: snap install --channel=latest/stable lxd
+
     - name: Install refresh MAAS snap package
-      shell: snap refresh --channel=latest/stable lxd
+      ansible.builtin.command: snap refresh --channel=latest/stable lxd
+    
     - name: Install MAAS package for both Region and Rack
-      shell: snap install maas
+      ansible.builtin.command: snap install maas
+
     - name: Install the test db for MAAS
-      shell: snap install maas-test-db
+      ansible.builtin.command: snap install maas-test-db
+
     - name: Initializing MAAS setup
-      debug:
-        msg: maas init region+rack --database-uri maas-test-db:/// --maas-url http://{{default_ip}}:5240/MAAS
+      ansible.builtin.debug:
+        msg: maas init region+rack --database-uri maas-test-db:/// --maas-url http://{{ default_ip }}:5240/MAAS
+
     - name: Init MAAS
-      shell: maas init region+rack --database-uri maas-test-db:/// --maas-url http://{{default_ip}}:5240/MAAS
+      ansible.builtin.command: maas init region+rack --database-uri maas-test-db:/// --maas-url http://{{ default_ip }}:5240/MAAS
     # =========================
     # Setup networking
     # =========================
-    - name: Enable ipv4 forward in the /etc/sysctl.conf
-      replace:
+    - name: Enable IPv4 forward in the /etc/sysctl.conf
+      ansible.builtin.lineinfile:
         path: /etc/sysctl.conf
-        regexp: '#net.ipv4.ip_forward=1'
-        replace: 'net.ipv4.ip_forward=1'
-    - name: Setup ip tables
-      shell: 'iptables -t nat -A POSTROUTING -o {{default_interface}} -j SNAT --to {{default_ip}}'
+        regexp: '^(# *){0,1}net\.ipv4\.ip_forward *='
+        line: net.ipv4.ip_forward=1
+
+    - name: Setup IP tables
+      ansible.builtin.command: 'iptables -t nat -A POSTROUTING -o {{ default_interface }} -j SNAT --to {{ default_ip }}'
       register: IPV4_NAT
-    - name: Install iptables IPv4
-      shell: echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections
-      register: IP_TABLES_IPV4
-    - name: Install iptables IPv6
-      shell: echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections
-      register: IP_TABLES_IPV6
-    - name: Install iptables-persistent package
-      apt: pkg=iptables-persistent state=present update_cache=true
+
+    - name: Install persistent iptables for IPv4 and IPv6
+      ansible.builtin.shell: |
+        echo 'iptables-persistent iptables-persistent/autosave_v4 boolean true' >  iptables-persistent-autosave;
+        echo 'iptables-persistent iptables-persistent/autosave_v6 boolean true' >> iptables-persistent-autosave;
+        debconf-set-selections iptables-persistent-autosave;
+      register: IP_TABLES_PERSISTENT
+      failed_when: IP_TABLES_PERSISTENT.rc != 0
     # =========================
     # Setup the server to be more informative
     # Improve UX with useful tools
     # =========================
-    - name: Install OpenSSH
-      apt: pkg=openssh-server state=present update_cache=true
-    - name: Install jq
-      apt: pkg=jq state=present update_cache=true
-    - name: Get OS Release
-      shell: lsb_release -cs
-      register: RELEASE
-    - name: Install htop
-      apt: pkg=htop state=present update_cache=true
-    - name: Install tmux
-      apt: pkg=tmux state=present update_cache=true
-    - name: Install curl
-      apt: pkg=curl state=present update_cache=true
-    - name: Install git
-      apt: pkg=git state=present update_cache=true      
-    - name: Install neofetch
-      apt: pkg=neofetch state=present update_cache=true
-    - name: Install Figlet
-      apt: pkg=figlet state=present update_cache=true
-    - name: Install Toilet
-      apt: pkg=toilet state=present update_cache=true
-    - name: Add the hostname to the message of the day
-      shell: 'toilet -f slant $(hostname) -F metal > /etc/motd'
-      register: MOTD
+    - name: Install mandatory apt packages
+      ansible.builtin.apt:
+        name:
+          - jq
+          - git 
+          - iptables-persistent
+          - openssh-server
+          - curl
+        state: present
+        update_cache: true
+      register: AptReqReturnCode
+      until: AptReqReturnCode is success
+      retries: 10
+      delay: 10
+      
+    - name: Install optional apt packages and tools
+      ansible.builtin.apt:
+        name:
+          - vim
+          - htop
+          - tmux
+          - wget
+          - neofetch
+          - figlet 
+          - toilet
+        state: present
+        update_cache: true
+      register: AptOptReturnCode
+      until: AptOptReturnCode is success
+      retries: 10
+      delay: 10
+      failed_when: false
+      when: MINIMAL_INSTALL is not defined
 
+    - name: Add the hostname to the message of the day
+      ansible.builtin.shell: 'toilet -f slant $(hostname) -F metal > /etc/motd'
+      register: MOTD
+      failed_when: false
+      when:
+        - AptOptReturnCode is success      
+        - MINIMAL_INSTALL is not defined
 
   handlers:
-
-
