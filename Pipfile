@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+ansible = "~=6.7"
+ansible-core = "~=2.13"
+botocore = "~=1.27"
+docker = "~=6.0"
+jinja2 = "~=3.1"
+jmespath = "~=1.0"
+xlsxwritter = "~=3.0"
+pyopenssl = "~=23.0"
+ipaddr = "*"
+netaddr = "*"
+requests = "*"
+
+[requirements]
+python_version = "3"
