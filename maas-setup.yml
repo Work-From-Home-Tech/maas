@@ -75,8 +75,12 @@
       register: IPV4_NAT
 
     - name: Install persistent iptables for IPv4 and IPv6
-      ansible.builtin.command: debconf-set-selections iptables-persistent-autosave
+      ansible.builtin.shell: |
+        echo 'iptables-persistent iptables-persistent/autosave_v4 boolean true' >  iptables-persistent-autosave;
+        echo 'iptables-persistent iptables-persistent/autosave_v6 boolean true' >> iptables-persistent-autosave;
+        debconf-set-selections iptables-persistent-autosave;
       register: IP_TABLES_PERSISTENT
+      filed_when: IP_TABLES_PERSISTENT.rc != 0
     # =========================
     # Setup the server to be more informative
     # Improve UX with useful tools
